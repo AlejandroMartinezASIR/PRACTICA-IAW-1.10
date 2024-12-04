@@ -48,50 +48,53 @@ Configuramos las variables de todos los Scripts
 
 ## Contenido archivo "setup_loadbalancer.sh"
 
-Configuramos para mostrar los comandos y finalizar si hay error
+## Contenido archivo `setup_loadbalancer.sh`
 
-    set -ex
+1. `set -ex`: Configura el modo de ejecución del script. La opción `-e` hace que el script se detenga si algún comando falla, y `-x` muestra los comandos ejecutados con sus argumentos.
 
-Importamos el archivo de variables 
+2. `source .env`: Importa las variables de entorno desde el archivo `.env` para ser utilizadas durante la ejecución del script.
 
-    source .env
+3. `apt update`: Actualiza la lista de repositorios disponibles.
 
-Actualizamos los repositorios
+4. `apt upgrade -y`: Actualiza los paquetes instalados a sus versiones más recientes.
 
-    apt update
+5. `apt install nginx -y`: Instala el servidor web Nginx.
 
-Actualiza los paquetes
+6. **Deshabilitar el virtualhost por defecto**  
+   Comprueba si existe el archivo predeterminado de configuración de Nginx y lo elimina.  
+   ```bash
+   if [ -f "/etc/nginx/sites-enabled/default" ]; then
+       unlink /etc/nginx/sites-enabled/default
+   fi
 
-    apt upgrade -y
+7. **Copiar el archivo de configuración del balanceador de carga**  
+   Copia la configuración personalizada del balanceador de carga a la ruta adecuada.  
+   ```bash
+   cp ../conf/load-balancer.conf /etc/nginx/sites-available
 
-Instalamos nginx
+8. **Sustituir valores en el archivo de configuración**  
+   Reemplaza las variables `IP_FRONTEND_1` y `IP_FRONTEND_2` con los valores correspondientes del archivo `.env`.  
+   ```bash
+   sed -i "s/IP_FRONTEND_1/$IP_FRONTEND_1/" /etc/nginx/sites-available/load-balancer.conf
+   sed -i "s/IP_FRONTEND_2/$IP_FRONTEND_2/" /etc/nginx/sites-available/load-balancer.conf
 
-    apt install nginx -y
 
-Deshabilitamos el virtualhost por defecto
-    
-    if [ -f "/etc/nginx/sites-enabled/default"]; then
-    unlink /etc/nginx/sites-enabled/default
-    fi
+9. **Habilitar el virtualhost del balanceador de carga**  
+   Crea un enlace simbólico para habilitar la configuración del balanceador de carga si aún no existe.  
+   ```bash
+   if [ ! -f "/etc/nginx/sites-enabled/load-balancer.conf" ]; then 
+       ln -s /etc/nginx/sites-available/load-balancer.conf /etc/nginx/sites-enabled
+   fi
 
-Copiamos el archivo de configuración de Nginx
 
-    cp ../conf/load-balancer.conf /etc/nginx/sites-available
-
-Sustituimos los valores de la plantilla del archivo de configuración
-
-    sed -i "s/IP_FRONTEND_1/$IP_FRONTEND_1/" /etc/nginx/sites-available/load-balancer.conf
-    sed -i "s/IP_FRONTEND_2/$IP_FRONTEND_2/" /etc/nginx/sites-available/load-balancer.conf
-
-Habilitamos el virtualhost del balanceador de carga
-
-    if [ ! -f "/etc/nginx/sites-enabled/load-balancer.conf" ]; then 
-    ln -s /etc/nginx/sites-available/load-balancer.conf /etc/nginx/sites-enabled
-    fi
-
-Reinciamos el balanceador de carga
-
+10. **Reiniciar el servicio Nginx**  
+    Reinicia el servicio de Nginx para aplicar los cambios de configuración.  
+    ```bash
     systemctl restart nginx
+    ```
+
+
+
 
 ## Contenido archivo "deploy_wordpress_backend.sh"
 
