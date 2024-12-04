@@ -33,9 +33,3 @@ chown -R www-data:www-data /var/www/html
 
 #Habilitamos el módulo mod_rewrite de Apache.
 a2enmod rewrite
-
-#Después de habilitar el módulo deberá reiniciar el servicio de Apache.
-systemctl restart apache2
-
-
-a2ensite 000-default.conf
